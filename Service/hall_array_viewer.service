@@ -1,0 +1,20 @@
+[Unit]
+Description=Hall Array Viewer Application (Qt5)
+After=graphical.target
+Requires=graphical.target
+
+[Service]
+Type=simple
+User=rpi
+Group=rpi
+
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/rpi/.Xauthority
+
+ExecStart=/home/rpi/Application/app/hall_array_viewer
+
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

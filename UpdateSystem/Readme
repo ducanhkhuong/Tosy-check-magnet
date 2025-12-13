@@ -1,0 +1,10 @@
+III.how to update system
+    step 1: mkdir /home/rpi/Application/app
+    step 2: cp UpdateSystem/hall_array_viewer /home/rpi/Application/app/hall_array_viewer
+    step 3: sudo -i
+    step 4: 
+        + cd /etc/systemd/system
+        + cp UpdateSystem/hall_array_viewer.service .
+        + systemctl daemon-reload
+        + systemctl enable hall_array_viewer.service
+    done

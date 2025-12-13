@@ -1,0 +1,519 @@
+from scanf import scanf
+from PyQt5 import QtWidgets, uic, QtCore, QtGui
+from PyQt5.QtGui import QPixmap, QImage , QPainter, QPen, QColor
+import sys
+import cv2
+import re
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
+from Serial.serial_hal import SerialReader
+from Guider.guider_main import MainWindow
+import configparser
+import time
+from Define.define import Config , Command , Calib , Sensor , Flags , Total
+from Config.config import load_config , get_resource_path
+from Timer.compare_value import compare_value_timer
+from images.hall_image import ImageWithPoints
+
+serial_reader = None
+total = Total()
+
+def main():
+    #load config    
+    cfg_path = get_resource_path("Config/config_cube16l.json")
+    cfg = load_config(cfg_path)
+    print("Loadconfig : done")
+    #Debug config
+        # cfg = load_config("Config/config_cube16l.json")
+        # print(cfg.port)
+        # print(cfg.baudrate)
+        # print(cfg.image)
+        # print(cfg.calib["Calib1"].sensor_number)
+        # print(cfg.calib["Calib1"].magnet_threshold)
+        # for s in cfg.calib["Calib1"].sensors:
+        #     print(s.id, s.x, s.y)
+
+        # print(cfg.calib["Calib2"].sensor_number)
+        # print(cfg.calib["Calib2"].magnet_threshold)
+        # for s in cfg.calib["Calib2"].sensors:
+        #     print(s.id, s.x, s.y)
+
+    #init Guider
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    design_width = main_window.width()
+    design_height = main_window.height()
+    print("UI Designer size:", design_width, "x", design_height)
+    screen = app.primaryScreen()
+    dpi = screen.logicalDotsPerInch()
+    scale = dpi / 96
+    print("DPI =", dpi, " Scale =", scale)
+    print("Loadscreen : done")
+    scaled_width = int(design_width * scale)
+    scaled_height = int(design_height * scale)
+    main_window.resize(scaled_width, scaled_height)
+    main_window.setMinimumSize(scaled_width, scaled_height)
+    main_window.setMaximumSize(scaled_width, scaled_height)
+
+    #Set default values
+    main_window.labelDeviceStatus.setText("Device not connected")
+    main_window.linePort.setText(cfg.port)
+    main_window.lineBaudrate.setText(cfg.baudrate)
+    main_window.ColorConnect.setText("")
+    main_window.ColorConnect.setStyleSheet("background-color: red")
+    main_window.ColorCl1.setText("")
+    main_window.ColorCl1.setStyleSheet("background-color: red")
+    main_window.ColorCl2.setText("")
+    main_window.ColorCl2.setStyleSheet("background-color: red")
+    main_window.ColorCheck1.setText("")
+    main_window.ColorCheck1.setStyleSheet("background-color: red")
+    main_window.ColorCheck2.setText("")
+    main_window.ColorCheck2.setStyleSheet("background-color: red")
+
+    #Image
+    image_path = get_resource_path(cfg.image)
+    image = ImageWithPoints(
+        image_path,
+        cfg.calib["Calib1"].sensors,
+        cfg.calib["Calib2"].sensors
+    )
+
+    #Button Connect/Disconnect
+    main_window.buttonConnect.setText("Connect")
+    main_window.buttonConnect.clicked.connect(lambda: button_connect_click())
+    def button_connect_click():
+        global serial_reader
+        if serial_reader is None:
+            comport = main_window.linePort.text()
+            serial_reader = SerialReader(comport)
+
+            if not serial_reader.is_connect:
+                main_window.labelDeviceStatus.setText("Cannot connect COM Port")
+                serial_reader = None
+                return
+
+            main_window.labelDeviceStatus.setText("COM Port connected")
+            Flags.is_connected = True
+            main_window.ColorConnect.setStyleSheet("background-color: green")
+            main_window.buttonConnect.setText("Disconnect")
+            print("Connected open")
+            serial_reader.data_received.connect(process_serial_data)
+            return
+
+        else:
+            try:
+                Flags.is_connected = False
+                serial_reader.close()
+            except:
+                pass
+
+            serial_reader = None
+            print("Connected closed")
+            main_window.labelDeviceStatus.setText("COM Port disconnected")
+            main_window.ColorConnect.setStyleSheet("background-color: red")
+            main_window.ColorCl1.setStyleSheet("background-color: red")
+            main_window.ColorCl2.setStyleSheet("background-color: red")
+            main_window.ColorCheck1.setStyleSheet("background-color: red")
+            main_window.ColorCheck2.setStyleSheet("background-color: red")
+            main_window.buttonConnect.setText("Connect")
+
+    def process_serial_data(data):
+        print("Recv:",data)
+        lines = data.strip().splitlines()
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            match = re.match(r"(MANUAL|AUTO)(\d):\s*(.*)", line)
+            if not match:
+                continue
+
+            #parse command
+            data_type = match.group(1)
+
+            #parse id
+            group_id = int(match.group(2))
+
+            #parse value
+            values_str = match.group(3)
+            values = []
+            for v in values_str.split(","):
+                v = v.strip()
+                if v in ("0", "1"):
+                    values.append(int(v))
+                else:
+                    print("Skipping invalid value:", v)
+
+            #check sensor number
+            N1_S = len(cfg.calib["Calib1"].sensors)
+            N2_S = len(cfg.calib["Calib2"].sensors)
+
+            if data_type in ("MANUAL", "AUTO") and group_id == 1:
+                if len(values) != N1_S:
+                    return
+
+            if data_type in ("MANUAL", "AUTO") and group_id == 2:
+                if len(values) != N2_S:
+                    return
+
+            #check command
+            if data_type == "MANUAL" and Flags.onclick_mode:
+                if group_id == 1:                
+                    total.list_false_sensors_calib1 = []
+                    total.list_done_sensors_calib1 = []
+                    #check value
+                    for i, val in enumerate(values):
+                        if val == 1:
+                            total.list_false_sensors_calib1.append(i)
+                        else:
+                            total.list_done_sensors_calib1.append(i)
+                    #check passed/fail
+                    if all(v == 1 for v in values):
+                        total.calib1_manual_is_total = False
+                    elif all(v == 0 for v in values):
+                        total.calib1_manual_is_total = True
+                    else:
+                        total.calib1_manual_is_total = False
+
+                elif group_id == 2:
+                    total.list_false_sensors_calib2 = []
+                    total.list_done_sensors_calib2 = []
+                    #check value
+                    N1 = len(cfg.calib["Calib1"].sensors)
+                    for i, val in enumerate(values):
+                        global_i = i + N1
+                        if val == 1:
+                            total.list_false_sensors_calib2.append(global_i)
+                        else:
+                            total.list_done_sensors_calib2.append(global_i)
+                    #check passed/fail
+                    if all(v == 1 for v in values):
+                        total.calib2_manual_is_total = False
+                    elif all(v == 0 for v in values):
+                        total.calib2_manual_is_total = True
+                    else:
+                        total.calib2_manual_is_total = False
+
+            if data_type == "AUTO" and not Flags.onclick_mode:
+                if group_id == 1:                
+                    total.list_false_sensors_calib1_auto = []
+                    total.list_done_sensors_calib1_auto = []
+                    #check value
+                    for i, val in enumerate(values):
+                        if val == 1:
+                            total.list_false_sensors_calib1_auto.append(i)
+                        else:
+                            total.list_done_sensors_calib1_auto.append(i)
+                    #check passed/fail
+                    if all(v == 1 for v in values):
+                        total.calib1_auto_is_total = False
+                    elif all(v == 0 for v in values):
+                        total.calib1_auto_is_total = True
+                    else:
+                        total.calib1_auto_is_total = False
+
+                elif group_id == 2:
+                    total.list_false_sensors_calib2_auto = []
+                    total.list_done_sensors_calib2_auto = []
+                    #check value
+                    N1 = len(cfg.calib["Calib1"].sensors)
+                    for i, val in enumerate(values):
+                        global_i = i + N1
+                        if val == 1:
+                            total.list_false_sensors_calib2_auto.append(global_i)
+                        else:
+                            total.list_done_sensors_calib2_auto.append(global_i)
+                    #check passed/fail
+                    if all(v == 1 for v in values):
+                        total.calib2_auto_is_total = False
+                    elif all(v == 0 for v in values):
+                        total.calib2_auto_is_total = True
+                    else:
+                        total.calib2_auto_is_total = False
+
+    # Btn Normal
+    def handle_normal(cmd, label_cl=None, label_check=None):
+        if not Flags.is_connected:
+            print("Cannot onclick: COM Port is not opened")
+            if label_cl:
+                label_cl.setStyleSheet("background-color: red")
+            if label_check:
+                label_check.setStyleSheet("background-color: red")
+            return
+
+        if not Flags.onclick_mode:
+            print("mode AUTO cannot onclick")
+            return
+
+        serial_reader.write_data(cmd)
+
+        if label_cl:
+            label_cl.setStyleSheet("background-color: green")
+        if label_check:
+            label_check.setStyleSheet("background-color: green")
+
+        if cmd == Command.calib_1 or cmd == Command.calib_2 : 
+            if not total_timer.isActive() or not index_manual_timer.isActive():
+                total_timer.start()
+                index_manual_timer.start()
+
+    #Btn Calib 1
+    main_window.btnCalib1.clicked.connect(
+        lambda: handle_normal(
+            Command.calib_1,
+            label_cl=main_window.ColorCl1
+        )
+    )
+
+    #Btn Calib 2
+    main_window.btnCalib2.clicked.connect(
+        lambda: handle_normal(
+            Command.calib_2,
+            label_cl=main_window.ColorCl2
+        )
+    )
+
+    #Btn Check 1
+    main_window.btnCheck1.clicked.connect(
+        lambda: handle_normal(
+            Command.check_1,
+            label_check=main_window.ColorCheck1
+        )
+    )
+
+    #Btn Check 2
+    main_window.btnCheck2.clicked.connect(
+        lambda: handle_normal(
+            Command.check_2,
+            label_check=main_window.ColorCheck2
+        )
+    )
+
+    #Btn Compare
+    def handle_compare(cmd, value, label_cl, label_check, compare_flag_name, onclick_name):
+        if not Flags.onclick_mode:
+            print("mode AUTO cannot onclick")
+            return
+
+        if Flags.is_connected:
+            if getattr(Flags, compare_flag_name):
+                setattr(Flags, onclick_name, True)
+                full_cmd = cmd + str(value) + "\n"
+                print(full_cmd)
+                serial_reader.write_data(full_cmd)
+                label_cl.setStyleSheet("background-color: red")
+                label_check.setStyleSheet("background-color: red")
+            else:
+                pass
+        else:
+            print("Cannot compare: COM Port is not opened")
+
+    # Btn Compare 1
+    main_window.btnCompare1.clicked.connect(
+        lambda: handle_compare(
+            Command.compare_1,
+            Command.value_compare_1,
+            main_window.ColorCl1,
+            main_window.ColorCheck1,
+            "is_compare1",
+            "onclick_compare_1"
+        )
+    )
+
+    # Btn Compare 2
+    main_window.btnCompare2.clicked.connect(
+        lambda: handle_compare(
+            Command.compare_2,
+            Command.value_compare_2,
+            main_window.ColorCl2,
+            main_window.ColorCheck2,
+            "is_compare2",
+            "onclick_compare_2"
+        )
+    )
+
+    # Btn Mode
+    def power_mode():
+        if not Flags.is_connected:
+            print("Cannot switch mode: COM Port is not opened")
+            return
+
+        total.list_false_sensors_calib1 = []
+        total.list_done_sensors_calib1 = []
+        total.list_false_sensors_calib2 = []
+        total.list_done_sensors_calib2 = []
+        total.list_false_sensors_calib1_auto = []
+        total.list_done_sensors_calib1_auto = []
+        total.list_false_sensors_calib2_auto = []
+        total.list_done_sensors_calib2_auto = []
+
+        total.calib1_auto_is_total = False
+        total.calib2_auto_is_total = False
+        total.calib1_manual_is_total = False
+        total.calib2_manual_is_total = False
+
+        image.sensor_colors = {}
+        image.draw_points()
+
+        Flags.onclick_mode = not Flags.onclick_mode
+        if Flags.onclick_mode:
+            main_window.btnMode.setText("AUTO")
+            print("mode : MANUAL ---> stop index_auto_timer")
+            print("mode : MANUAL ---> start index_manual_timer")
+            print("mode : MANUAL ---> restart total_timer")
+            index_auto_timer.stop()
+            index_manual_timer.start()
+            total_timer.start()
+        else:
+            main_window.btnMode.setText("MANUAL")
+            print("mode : AUTO ---> start index_auto_timer")
+            print("mode : AUTO ---> stop index_manual_timer")
+            print("mode : AUTO ---> restart total_timer")
+            index_auto_timer.start()
+            index_manual_timer.stop()
+            total_timer.start()
+    main_window.btnMode.clicked.connect(power_mode)
+
+    # Btn Reset
+    def power_reset():
+        if not Flags.onclick_mode:
+            print("mode AUTO cannot onclick RESET")
+            return
+
+        if not Flags.is_connected:
+            print("Cannot reset: COM Port is not opened")
+            return
+
+        total.list_false_sensors_calib1 = []
+        total.list_done_sensors_calib1 = []
+        total.list_false_sensors_calib2 = []
+        total.list_done_sensors_calib2 = []
+        total.list_false_sensors_calib1_auto = []
+        total.list_done_sensors_calib1_auto = []
+        total.list_false_sensors_calib2_auto = []
+        total.list_done_sensors_calib2_auto = []
+        Flags.onclick_compare_1 = False
+        Flags.onclick_compare_2 = False
+
+        total.calib1_auto_is_total = False
+        total.calib2_auto_is_total = False
+        total.calib1_manual_is_total = False
+        total.calib2_manual_is_total = False
+
+        image.sensor_colors = {}
+        image.draw_points()
+
+        index_manual_timer.stop()
+        index_auto_timer.stop()
+        total_timer.stop()
+
+        main_window.Total1.setText("N/A")
+        main_window.Total1.setStyleSheet("font-weight: bold; background-color: none;")
+        main_window.Total2.setText("N/A")
+        main_window.Total2.setStyleSheet("font-weight: bold; background-color: none;")
+        main_window.ColorCl1.setStyleSheet("background-color: red")
+        main_window.ColorCl2.setStyleSheet("background-color: red")
+        main_window.ColorCheck1.setStyleSheet("background-color: red")
+        main_window.ColorCheck2.setStyleSheet("background-color: red")
+
+        print("Reset Compare")
+        print("mode : RESET ---> stop index_auto_timer")
+        print("mode : RESET ---> stop index_manual_timer")
+        print("mode : RESET ---> stop total_timer")
+    main_window.btnReset.clicked.connect(power_reset)
+
+    #update compare index manual
+    def update_compare_index_manual():
+        if not Flags.is_connected:
+            return
+        #manual
+        if Flags.onclick_compare_1 and hasattr(total, "list_false_sensors_calib1"):
+
+            for i in total.list_false_sensors_calib1:
+                image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "red")
+
+            for i in total.list_done_sensors_calib1:
+                image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "green")
+
+        if Flags.onclick_compare_2 and hasattr(total, "list_false_sensors_calib2"):
+            N1 = len(cfg.calib["Calib1"].sensors)
+
+            for i_shifted in total.list_false_sensors_calib2:
+                i = i_shifted - N1
+                image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "red")
+
+            for i_shifted in total.list_done_sensors_calib2:
+                i = i_shifted - N1
+                image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "green")
+
+    #update compare index auto
+    def update_compare_index_auto():
+        if not Flags.is_connected:
+            return
+
+        #calib1
+        for i in total.list_false_sensors_calib1_auto:
+            image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "red")
+
+        for i in total.list_done_sensors_calib1_auto:
+            image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "green")
+
+        #calib2
+        N1 = len(cfg.calib["Calib1"].sensors)
+        for i_shifted in total.list_false_sensors_calib2_auto:
+            i = i_shifted - N1
+            image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "red")
+
+        for i_shifted in total.list_done_sensors_calib2_auto:
+            i = i_shifted - N1
+            image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "green")
+
+    #update compare total
+    def update_compare_total():
+        if not Flags.is_connected:
+            return
+
+        #update total
+        if total.calib1_manual_is_total or total.calib1_auto_is_total:
+            main_window.Total1.setText("PASSED")
+            main_window.Total1.setStyleSheet("font-weight: bold; background-color: green;")
+        else:    
+            main_window.Total1.setText("FAILED")
+            main_window.Total1.setStyleSheet("font-weight: bold; background-color: red;")
+
+        if total.calib2_manual_is_total or total.calib2_auto_is_total:
+            main_window.Total2.setText("PASSED")
+            main_window.Total2.setStyleSheet("font-weight: bold; background-color: green;")
+        else :
+            main_window.Total2.setText("FAILED")
+            main_window.Total2.setStyleSheet("font-weight: bold; background-color: red;")
+
+
+    #timer update index manual compare
+    index_manual_timer = QTimer(main_window)
+    index_manual_timer.setInterval(100)
+    index_manual_timer.timeout.connect(update_compare_index_manual)
+    index_manual_timer.start()
+
+    #timer update index manual compare
+    index_auto_timer = QTimer(main_window)
+    index_auto_timer.setInterval(100)
+    index_auto_timer.timeout.connect(update_compare_index_auto)
+    index_auto_timer.start()
+
+    #timer update total compare
+    total_timer = QTimer(main_window)
+    total_timer.setInterval(100)
+    total_timer.timeout.connect(update_compare_total)
+    total_timer.start()
+
+    #timer update value compare 
+    compare_value_timer(main_window)
+
+    #main window
+    main_window.show()
+    sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()
