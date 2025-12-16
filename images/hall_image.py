@@ -11,21 +11,25 @@ import configparser
 import time
 from Define.define import Config , Command , Calib , Sensor , Flags , Total
 from Config.config import load_config 
+from PyQt5.QtGui import QTransform
 
 
 class ImageWithPoints(QWidget):
     def __init__(self, image_path, *sensor_groups):
-
         super().__init__()
 
         self.image_path = image_path
         self.sensor_groups = sensor_groups
+        self.rotation = 180
 
         self.original_pixmap = QPixmap(self.image_path)
-        self.pixmap = self.original_pixmap.copy()
+
+        self.pixmap = self.original_pixmap.transformed(
+            QTransform().rotate(self.rotation),
+            Qt.SmoothTransformation
+        )
 
         self.sensor_colors = {}
-
         self.default_color = QColor(255, 0, 0)
 
         self.init_ui()
@@ -36,10 +40,9 @@ class ImageWithPoints(QWidget):
         self.label = QLabel()
         self.draw_points()
 
-        self.label.setPixmap(self.pixmap)
         layout.addWidget(self.label)
-
         self.setLayout(layout)
+
         self.setWindowTitle("Draw Points on Image")
         self.show()
 
@@ -47,7 +50,11 @@ class ImageWithPoints(QWidget):
         return self.sensor_colors.get(sensor_id, self.default_color)
 
     def draw_points(self):
-        self.pixmap = self.original_pixmap.copy()
+        self.pixmap = self.original_pixmap.transformed(
+            QTransform().rotate(self.rotation),
+            Qt.SmoothTransformation
+        )
+
         painter = QPainter(self.pixmap)
         radius = 10
 
