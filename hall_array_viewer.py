@@ -19,10 +19,6 @@ serial_reader = None
 total = Total()
 
 def main(cfg,logger):
-    #load config    
-    # cfg_path = get_resource_path("Config/config_cube16l.json")
-    # cfg = load_config(cfg_path)
-    # logger = Logger(cfg.logfile)
     logger.info("\nApplication open")
     logger.info("Load configfile : done")
     logger.info(f"Port={cfg.port}, Baudrate={cfg.baudrate}")
