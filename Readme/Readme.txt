@@ -16,11 +16,14 @@ II.how to run test
 III.how to update system
     downloads folder UpdateSystem to other rpi 
     step 1: mkdir /home/rpi/Application/app
-    step 2: cp UpdateSystem/hall_array_viewer /home/rpi/Application/app/hall_array_viewer
-    step 3: sudo -i
-    step 4: 
+    step 2: mkdir /home/rpi/Application/log
+    step 3: cp UpdateSystem/hall_array_viewer /home/rpi/Application/app/hall_array_viewer
+    step 4: cp UpdateSystem/hall_array_viewer.log /home/rpi/Application/log/hall_array_viewer.log
+    step 5: sudo -i
+    step 6: 
         + cd /etc/systemd/system
         + cp UpdateSystem/hall_array_viewer.service .
         + systemctl daemon-reload
         + systemctl enable hall_array_viewer.service
+        + systemctl start hall_array_viewer.service
     done

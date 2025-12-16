@@ -16,6 +16,7 @@ class Calib:
 @dataclass
 class Config:
     port: str
+    logfile: str
     baudrate: int
     image: str
     calib: dict

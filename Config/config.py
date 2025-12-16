@@ -33,6 +33,7 @@ def load_config(json_file):
     config = Config(
         port=raw["Port"],
         baudrate=raw["Baudrate"],
+        logfile=raw["Logfile"],
         image=raw.get("Image", ""),
         calib=calibrations
     )
