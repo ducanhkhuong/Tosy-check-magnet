@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>411</width>
-    <height>601</height>
+    <width>410</width>
+    <height>578</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1392,8 +1392,8 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GC1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>240</y>
+      <x>210</x>
+      <y>230</y>
       <width>181</width>
       <height>181</height>
      </rect>
@@ -1403,7 +1403,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>Controll1</string>
+     <string>JigA</string>
     </property>
     <widget class="QPushButton" name="btnCalib1">
      <property name="geometry">
@@ -1425,7 +1425,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Calib1</string>
+      <string>CalibA</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btnCheck1">
@@ -1448,7 +1448,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Check1</string>
+      <string>CheckA</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btnCompare1">
@@ -1471,7 +1471,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Compare1</string>
+      <string>CompareA</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="ValueCompare1">
@@ -1524,8 +1524,8 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GC2">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>240</y>
+      <x>20</x>
+      <y>230</y>
       <width>181</width>
       <height>181</height>
      </rect>
@@ -1535,7 +1535,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>Controll2</string>
+     <string>JigB</string>
     </property>
     <widget class="QPushButton" name="btnCompare2">
      <property name="geometry">
@@ -1557,7 +1557,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Compare2</string>
+      <string>CompareB</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btnCheck2">
@@ -1580,7 +1580,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Check2</string>
+      <string>CheckB</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btnCalib2">
@@ -1603,7 +1603,7 @@ border: 1px solid black;</string>
       <string notr="true">background-color: rgb(175, 175, 175);</string>
      </property>
      <property name="text">
-      <string>Calib2</string>
+      <string>CalibB</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="ValueCompare2">
@@ -1656,8 +1656,8 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GT1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>440</y>
+      <x>210</x>
+      <y>430</y>
       <width>181</width>
       <height>101</height>
      </rect>
@@ -1667,7 +1667,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>Total1</string>
+     <string>TotalA</string>
     </property>
     <widget class="QLabel" name="Total1">
      <property name="geometry">
@@ -1692,8 +1692,8 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GT2">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>440</y>
+      <x>20</x>
+      <y>430</y>
       <width>181</width>
       <height>101</height>
      </rect>
@@ -1703,7 +1703,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>Total2</string>
+     <string>TotalB</string>
     </property>
     <widget class="QLabel" name="Total2">
      <property name="geometry">
@@ -2241,7 +2241,7 @@ border: 1px solid black;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>411</width>
+     <width>410</width>
      <height>21</height>
     </rect>
    </property>

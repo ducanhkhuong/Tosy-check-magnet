@@ -1,8 +1,8 @@
 import sys
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout
-from PyQt5.QtGui import QPixmap, QPainter, QPen
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QTransform
+from PyQt5.QtCore import Qt
 
 IMAGE_PATH = "/home/rpi/python_ws/HallArrayViewer/Points/image.png"
 OUTPUT_JSON = "points.json"
@@ -11,8 +11,16 @@ OUTPUT_JSON = "points.json"
 class ImageWidget(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.pix = QPixmap(IMAGE_PATH)
-        self.setPixmap(self.pix.copy())
+
+        # Load ảnh và xoay 180 độ mặc định
+        original_pix = QPixmap(IMAGE_PATH)
+        self.pix = original_pix.transformed(
+            QTransform().rotate(180),
+            Qt.SmoothTransformation
+        )
+
+        self.setPixmap(self.pix)
+
         self.points = []
         self.collecting = False
 
@@ -24,7 +32,11 @@ class ImageWidget(QLabel):
     def stop_collect(self):
         self.collecting = False
         with open(OUTPUT_JSON, "w") as f:
-            json.dump([{"x": p.x(), "y": p.y()} for p in self.points], f, indent=4)
+            json.dump(
+                [{"x": p.x(), "y": p.y()} for p in self.points],
+                f,
+                indent=4
+            )
         print(f"Đã lưu {len(self.points)} điểm vào {OUTPUT_JSON}")
 
     def mousePressEvent(self, event):
@@ -33,7 +45,7 @@ class ImageWidget(QLabel):
             self.points.append(pos)
             print("Clicked:", pos.x(), pos.y())
 
-            # Vẽ lên ảnh
+
             pixmap_copy = self.pixmap().copy()
             painter = QPainter(pixmap_copy)
             painter.setPen(QPen(Qt.red, 6))
@@ -56,7 +68,6 @@ class MainWindow(QWidget):
         self.btn_stop = QPushButton("Stop & Save")
         self.btn_stop.clicked.connect(self.image_widget.stop_collect)
 
-        # Layout
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.btn_start)
         button_layout.addWidget(self.btn_stop)
@@ -66,7 +77,10 @@ class MainWindow(QWidget):
         main_layout.addLayout(button_layout)
 
         self.setLayout(main_layout)
-        self.resize(self.image_widget.pix.width(), self.image_widget.pix.height() + 50)
+        self.resize(
+            self.image_widget.pix.width(),
+            self.image_widget.pix.height() + 50
+        )
 
 
 if __name__ == "__main__":

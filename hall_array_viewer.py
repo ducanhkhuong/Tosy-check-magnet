@@ -13,29 +13,15 @@ from Define.define import Config , Command , Calib , Sensor , Flags , Total
 from Config.config import load_config , get_resource_path
 from Timer.compare_value import compare_value_timer
 from images.hall_image import ImageWithPoints
+from Log.logger import Logger
 
 serial_reader = None
 total = Total()
 
-def main():
-    #load config    
-    cfg_path = get_resource_path("Config/config_cube16l.json")
-    cfg = load_config(cfg_path)
-    print("Loadconfig : done")
-    #Debug config
-        # cfg = load_config("Config/config_cube16l.json")
-        # print(cfg.port)
-        # print(cfg.baudrate)
-        # print(cfg.image)
-        # print(cfg.calib["Calib1"].sensor_number)
-        # print(cfg.calib["Calib1"].magnet_threshold)
-        # for s in cfg.calib["Calib1"].sensors:
-        #     print(s.id, s.x, s.y)
-
-        # print(cfg.calib["Calib2"].sensor_number)
-        # print(cfg.calib["Calib2"].magnet_threshold)
-        # for s in cfg.calib["Calib2"].sensors:
-        #     print(s.id, s.x, s.y)
+def main(cfg,logger):
+    logger.info("\nApplication open")
+    logger.info("Load configfile : done")
+    logger.info(f"Port={cfg.port}, Baudrate={cfg.baudrate}")
 
     #init Guider
     app = QtWidgets.QApplication(sys.argv)
@@ -43,12 +29,12 @@ def main():
     main_window.show()
     design_width = main_window.width()
     design_height = main_window.height()
-    print("UI Designer size:", design_width, "x", design_height)
+    logger.info(f"UI Designer size y={design_width},x={design_height}")
     screen = app.primaryScreen()
     dpi = screen.logicalDotsPerInch()
     scale = dpi / 96
-    print("DPI =", dpi, " Scale =", scale)
-    print("Loadscreen : done")
+    logger.info(f"DPI ={dpi},Scale ={scale}")
+    logger.info("Load Screen : done")
     scaled_width = int(design_width * scale)
     scaled_height = int(design_height * scale)
     main_window.resize(scaled_width, scaled_height)
@@ -89,6 +75,7 @@ def main():
 
             if not serial_reader.is_connect:
                 main_window.labelDeviceStatus.setText("Cannot connect COM Port")
+                logger.warning("Connect : Cannot connect")
                 serial_reader = None
                 return
 
@@ -96,7 +83,7 @@ def main():
             Flags.is_connected = True
             main_window.ColorConnect.setStyleSheet("background-color: green")
             main_window.buttonConnect.setText("Disconnect")
-            print("Connected open")
+            logger.info("Connect : Connected open")
             serial_reader.data_received.connect(process_serial_data)
             return
 
@@ -108,7 +95,7 @@ def main():
                 pass
 
             serial_reader = None
-            print("Connected closed")
+            logger.info("Connect : Connected closed")
             main_window.labelDeviceStatus.setText("COM Port disconnected")
             main_window.ColorConnect.setStyleSheet("background-color: red")
             main_window.ColorCl1.setStyleSheet("background-color: red")
@@ -118,7 +105,7 @@ def main():
             main_window.buttonConnect.setText("Connect")
 
     def process_serial_data(data):
-        print("Recv:",data)
+        logger.info(f"Reciever : {data}")
         lines = data.strip().splitlines()
         for line in lines:
             line = line.strip()
@@ -143,7 +130,7 @@ def main():
                 if v in ("0", "1"):
                     values.append(int(v))
                 else:
-                    print("Skipping invalid value:", v)
+                    logger.warning("Skipping invalid value:", v)
 
             #check sensor number
             N1_S = len(cfg.calib["Calib1"].sensors)
@@ -235,7 +222,7 @@ def main():
     # Btn Normal
     def handle_normal(cmd, label_cl=None, label_check=None):
         if not Flags.is_connected:
-            print("Cannot onclick: COM Port is not opened")
+            logger.error("Cannot onclick: COM Port is not opened")
             if label_cl:
                 label_cl.setStyleSheet("background-color: red")
             if label_check:
@@ -243,7 +230,7 @@ def main():
             return
 
         if not Flags.onclick_mode:
-            print("mode AUTO cannot onclick")
+            logger.error("mode AUTO cannot onclick")
             return
 
         serial_reader.write_data(cmd)
@@ -293,21 +280,21 @@ def main():
     #Btn Compare
     def handle_compare(cmd, value, label_cl, label_check, compare_flag_name, onclick_name):
         if not Flags.onclick_mode:
-            print("mode AUTO cannot onclick")
+            logger.error("mode AUTO cannot onclick")
             return
 
         if Flags.is_connected:
             if getattr(Flags, compare_flag_name):
                 setattr(Flags, onclick_name, True)
                 full_cmd = cmd + str(value) + "\n"
-                print(full_cmd)
+                logger.info(full_cmd)
                 serial_reader.write_data(full_cmd)
                 label_cl.setStyleSheet("background-color: red")
                 label_check.setStyleSheet("background-color: red")
             else:
                 pass
         else:
-            print("Cannot compare: COM Port is not opened")
+            logger.error("Cannot compare: COM Port is not opened")
 
     # Btn Compare 1
     main_window.btnCompare1.clicked.connect(
@@ -336,7 +323,7 @@ def main():
     # Btn Mode
     def power_mode():
         if not Flags.is_connected:
-            print("Cannot switch mode: COM Port is not opened")
+            logger.error("Cannot switch mode: COM Port is not opened")
             return
 
         total.list_false_sensors_calib1 = []
@@ -359,17 +346,17 @@ def main():
         Flags.onclick_mode = not Flags.onclick_mode
         if Flags.onclick_mode:
             main_window.btnMode.setText("AUTO")
-            print("mode : MANUAL ---> stop index_auto_timer")
-            print("mode : MANUAL ---> start index_manual_timer")
-            print("mode : MANUAL ---> restart total_timer")
+            logger.info("mode : MANUAL ---> stop index_auto_timer")
+            logger.info("mode : MANUAL ---> start index_manual_timer")
+            logger.info("mode : MANUAL ---> restart total_timer")
             index_auto_timer.stop()
             index_manual_timer.start()
             total_timer.start()
         else:
             main_window.btnMode.setText("MANUAL")
-            print("mode : AUTO ---> start index_auto_timer")
-            print("mode : AUTO ---> stop index_manual_timer")
-            print("mode : AUTO ---> restart total_timer")
+            logger.info("mode : AUTO ---> start index_auto_timer")
+            logger.info("mode : AUTO ---> stop index_manual_timer")
+            logger.info("mode : AUTO ---> restart total_timer")
             index_auto_timer.start()
             index_manual_timer.stop()
             total_timer.start()
@@ -378,11 +365,11 @@ def main():
     # Btn Reset
     def power_reset():
         if not Flags.onclick_mode:
-            print("mode AUTO cannot onclick RESET")
+            logger.error("mode AUTO cannot onclick RESET")
             return
 
         if not Flags.is_connected:
-            print("Cannot reset: COM Port is not opened")
+            logger.error("Cannot reset: COM Port is not opened")
             return
 
         total.list_false_sensors_calib1 = []
@@ -417,10 +404,10 @@ def main():
         main_window.ColorCheck1.setStyleSheet("background-color: red")
         main_window.ColorCheck2.setStyleSheet("background-color: red")
 
-        print("Reset Compare")
-        print("mode : RESET ---> stop index_auto_timer")
-        print("mode : RESET ---> stop index_manual_timer")
-        print("mode : RESET ---> stop total_timer")
+        logger.info("Reset Compare")
+        logger.info("mode : RESET ---> stop index_auto_timer")
+        logger.info("mode : RESET ---> stop index_manual_timer")
+        logger.info("mode : RESET ---> stop total_timer")
     main_window.btnReset.clicked.connect(power_reset)
 
     #update compare index manual
@@ -516,4 +503,11 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main()
+    try:
+        cfg_path = get_resource_path("Config/config_cube16l.json")
+        cfg = load_config(cfg_path)
+        logger = Logger(cfg.logfile)
+        main(cfg,logger)
+    except:
+        logger.error("Application close")
+    
