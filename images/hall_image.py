@@ -1,7 +1,7 @@
 from scanf import scanf
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PyQt5.QtGui import QPixmap, QImage , QPainter, QPen, QColor , QBrush
+from PyQt5.QtGui import QPixmap, QImage , QPainter, QPen, QColor , QBrush ,QFont
 import sys
 import cv2
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
@@ -42,6 +42,22 @@ class ImageWithPoints(QWidget):
 
         layout.addWidget(self.label)
         self.setLayout(layout)
+
+        self.label_jig_b = QLabel("JigB", self)
+        font = QFont()
+        font.setPointSize(18)
+        font.setBold(True)
+
+        self.label_jig_b.setFont(font)
+        self.label_jig_b.setStyleSheet("color: white;")
+        self.label_jig_b.adjustSize()
+        self.label_jig_b.move(23, 15)
+
+        self.label_jig_a = QLabel("JigA", self)
+        self.label_jig_a.setFont(font)
+        self.label_jig_a.setStyleSheet("color: white;")
+        self.label_jig_a.adjustSize()
+        self.label_jig_a.move(511, 15)
 
         self.setWindowTitle("Draw Points on Image")
         self.show()

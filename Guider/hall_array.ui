@@ -1403,7 +1403,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>ControllA</string>
+     <string>JigA</string>
     </property>
     <widget class="QPushButton" name="btnCalib1">
      <property name="geometry">
@@ -1535,7 +1535,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>ControllB</string>
+     <string>JigB</string>
     </property>
     <widget class="QPushButton" name="btnCompare2">
      <property name="geometry">
@@ -1667,7 +1667,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>TotalB</string>
+     <string>TotalA</string>
     </property>
     <widget class="QLabel" name="Total1">
      <property name="geometry">
