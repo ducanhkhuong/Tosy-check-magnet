@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>410</width>
-    <height>578</height>
+    <width>419</width>
+    <height>588</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -2161,8 +2161,8 @@ border: 1px solid black;</string>
      <rect>
       <x>440</x>
       <y>50</y>
-      <width>913</width>
-      <height>582</height>
+      <width>963</width>
+      <height>672</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -2175,10 +2175,10 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GReset">
     <property name="geometry">
      <rect>
-      <x>270</x>
-      <y>90</y>
+      <x>260</x>
+      <y>50</y>
       <width>120</width>
-      <height>121</height>
+      <height>161</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -2234,6 +2234,29 @@ border: 1px solid black;</string>
       <string>Manual</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="btnImage">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>110</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(175, 175, 175);</string>
+     </property>
+     <property name="text">
+      <string>Cube16</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -2241,7 +2264,7 @@ border: 1px solid black;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>410</width>
+     <width>419</width>
      <height>21</height>
     </rect>
    </property>

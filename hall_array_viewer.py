@@ -17,8 +17,12 @@ from Log.logger import Logger
 
 serial_reader = None
 total = Total()
+CURRENT_CUBE = "Cube20"
+cfg = None
 
-def main(cfg,logger):
+def main(cfg_input, logger):
+    global cfg
+    cfg = cfg_input
     logger.info("\nApplication open")
     logger.info("Load configfile : done")
     logger.info(f"Port={cfg.port}, Baudrate={cfg.baudrate}")
@@ -56,13 +60,46 @@ def main(cfg,logger):
     main_window.ColorCheck2.setText("")
     main_window.ColorCheck2.setStyleSheet("background-color: red")
 
-    #Image
-    image_path = get_resource_path(cfg.image)
-    image = ImageWithPoints(
-        image_path,
-        cfg.calib["Calib1"].sensors,
-        cfg.calib["Calib2"].sensors
-    )
+    #Initial load image
+    image = None
+
+    def load_image_from_config():
+        nonlocal image
+
+        image_path = get_resource_path(cfg.image)
+        image = ImageWithPoints(
+            image_path,
+            cfg.calib["Calib1"].sensors,
+            cfg.calib["Calib2"].sensors
+        )
+
+        image.sensor_colors = {}
+        image.draw_points()
+
+        logger.info(f"Load image: {cfg.image}")
+
+    load_image_from_config()
+
+    def switch_cube():
+        global cfg, CURRENT_CUBE
+        if CURRENT_CUBE == "Cube20":
+            cfg_path = get_resource_path("Config/config_cube16l.json")
+            CURRENT_CUBE = "Cube16"
+        else:
+            cfg_path = get_resource_path("Config/config_cube20l.json")
+            CURRENT_CUBE = "Cube20"
+        logger.info(f"Switch cube -> {CURRENT_CUBE}")
+
+        cfg = load_config(cfg_path)
+        main_window.linePort.setText(cfg.port)
+        main_window.lineBaudrate.setText(cfg.baudrate)
+        main_window.btnImage.setText(CURRENT_CUBE)
+        load_image_from_config()
+
+    #Button Switch Cube
+    main_window.btnImage.setText("Cube20")
+    main_window.btnImage.clicked.connect(switch_cube)
+
 
     #Button Connect/Disconnect
     main_window.buttonConnect.setText("Connect")
@@ -504,7 +541,7 @@ def main(cfg,logger):
 
 if __name__ == '__main__':
     try:
-        cfg_path = get_resource_path("Config/config_cube16l.json")
+        cfg_path = get_resource_path("Config/config_cube20l.json")
         cfg = load_config(cfg_path)
         logger = Logger(cfg.logfile)
         main(cfg,logger)

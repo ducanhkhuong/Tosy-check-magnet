@@ -15,7 +15,6 @@ fi
 
 echo "copy from $FILE_EXE ----> $DESTINATION_APP"
 echo "copy from $FILE_EXE ----> $DESTINATION_DESKTOP"
-chmod +x "$FILE_EXE"
 cp "$FILE_EXE" "$DESTINATION_APP"
 cp "$FILE_EXE" "$DESTINATION_DESKTOP"
 
