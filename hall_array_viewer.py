@@ -67,10 +67,16 @@ def main(cfg_input, logger):
         nonlocal image
 
         image_path = get_resource_path(cfg.image)
+
+        rotation = 0
+        if "cube20" in cfg.image.lower():
+            rotation = 180
+
         image = ImageWithPoints(
             image_path,
             cfg.calib["Calib1"].sensors,
-            cfg.calib["Calib2"].sensors
+            cfg.calib["Calib2"].sensors,
+            rotation
         )
 
         image.sensor_colors = {}

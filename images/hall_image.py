@@ -15,12 +15,12 @@ from PyQt5.QtGui import QTransform
 
 
 class ImageWithPoints(QWidget):
-    def __init__(self, image_path, *sensor_groups):
+    def __init__(self, image_path, sensor_groups_a, sensor_groups_b, rotation=0):
         super().__init__()
 
         self.image_path = image_path
-        self.sensor_groups = sensor_groups
-        self.rotation = 180
+        self.sensor_groups = [sensor_groups_a, sensor_groups_b]
+        self.rotation = rotation
 
         self.original_pixmap = QPixmap(self.image_path)
 
@@ -47,13 +47,13 @@ class ImageWithPoints(QWidget):
         font.setPointSize(18)
         font.setBold(True)
 
-        self.label_jig_b = QLabel("JigA", self)
+        self.label_jig_b = QLabel("JigB", self)
         self.label_jig_b.setFont(font)
         self.label_jig_b.setStyleSheet("color: white;")
         self.label_jig_b.adjustSize()
         self.label_jig_b.move(70, 15)
 
-        self.label_jig_a = QLabel("JigB", self)
+        self.label_jig_a = QLabel("JigA", self)
         self.label_jig_a.setFont(font)
         self.label_jig_a.setStyleSheet("color: white;")
         self.label_jig_a.adjustSize()
