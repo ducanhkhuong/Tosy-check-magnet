@@ -13,11 +13,7 @@ class ImageWidget(QLabel):
         super().__init__(parent)
 
         # Load ảnh và xoay 180 độ mặc định
-        original_pix = QPixmap(IMAGE_PATH)
-        self.pix = original_pix.transformed(
-            QTransform().rotate(180),
-            Qt.SmoothTransformation
-        )
+        self.pix = QPixmap(IMAGE_PATH)
 
         self.setPixmap(self.pix)
 
