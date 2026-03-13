@@ -17,15 +17,24 @@ def load_config(json_file):
     calibrations = {}
     for key, val in raw.items():
         if key.startswith("Calib"):
-            sensor_list = [
+
+            rotate0 = [
                 Sensor(id=s["id"], x=s["x"], y=s["y"])
-                for s in val["Sensors"]
+                for s in val["Rotate0"]["Sensors"]
+            ]
+
+            rotate180 = [
+                Sensor(id=s["id"], x=s["x"], y=s["y"])
+                for s in val["Rotate180"]["Sensors"]
             ]
 
             calib = Calib(
                 sensor_number=val["SensorNumber"],
                 magnet_threshold=val["MagnetThreshold"],
-                sensors=sensor_list
+                sensors={
+                    0: rotate0,
+                    180: rotate180
+                }
             )
 
             calibrations[key] = calib

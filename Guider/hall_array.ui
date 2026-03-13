@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>419</width>
+    <width>483</width>
     <height>588</height>
    </rect>
   </property>
@@ -1392,7 +1392,7 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GC1">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>260</x>
       <y>230</y>
       <width>181</width>
       <height>181</height>
@@ -1656,7 +1656,7 @@ border: 1px solid black;</string>
    <widget class="QGroupBox" name="GT1">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>260</x>
       <y>430</y>
       <width>181</width>
       <height>101</height>
@@ -2159,7 +2159,7 @@ border: 1px solid black;</string>
    <widget class="QFrame" name="frameImage">
     <property name="geometry">
      <rect>
-      <x>440</x>
+      <x>490</x>
       <y>50</y>
       <width>963</width>
       <height>672</height>
@@ -2177,7 +2177,7 @@ border: 1px solid black;</string>
      <rect>
       <x>260</x>
       <y>50</y>
-      <width>120</width>
+      <width>211</width>
       <height>161</height>
      </rect>
     </property>
@@ -2186,7 +2186,7 @@ border: 1px solid black;</string>
 border: 1px solid black;</string>
     </property>
     <property name="title">
-     <string>Power</string>
+     <string>Mode</string>
     </property>
     <widget class="QPushButton" name="btnReset">
      <property name="geometry">
@@ -2237,8 +2237,8 @@ border: 1px solid black;</string>
     <widget class="QPushButton" name="btnImage">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>110</y>
+       <x>110</x>
+       <y>30</y>
        <width>81</width>
        <height>31</height>
       </rect>
@@ -2257,6 +2257,29 @@ border: 1px solid black;</string>
       <string>Cube16</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="btnRotate">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>70</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(175, 175, 175);</string>
+     </property>
+     <property name="text">
+      <string>Rotate</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -2264,7 +2287,7 @@ border: 1px solid black;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>419</width>
+     <width>483</width>
      <height>21</height>
     </rect>
    </property>
