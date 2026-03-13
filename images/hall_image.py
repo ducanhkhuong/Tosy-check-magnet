@@ -92,3 +92,20 @@ class ImageWithPoints(QWidget):
     def set_sensor_color(self, sensor_id, color_name):
         self.sensor_colors[sensor_id] = QColor(color_name)
         self.draw_points()
+
+    def rotate_180(self, cfg):
+        self.rotation = (self.rotation + 180) % 360
+
+        sensors_a = cfg.calib["Calib1"].sensors[self.rotation]
+        sensors_b = cfg.calib["Calib2"].sensors[self.rotation]
+
+        if self.rotation == 180:
+            self.label_jig_a.setText("JigB")
+            self.label_jig_b.setText("JigA")
+        else:
+            self.label_jig_a.setText("JigA")
+            self.label_jig_b.setText("JigB")
+
+        self.sensor_groups = [sensors_a, sensors_b]
+
+        self.draw_points()

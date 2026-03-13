@@ -66,16 +66,22 @@ def main(cfg_input, logger):
     def load_image_from_config():
         nonlocal image
 
+        if image:
+            image.deleteLater()
+
         image_path = get_resource_path(cfg.image)
 
         rotation = 0
         if "cube20" in cfg.image.lower():
             rotation = 180
 
+        sensors_a = cfg.calib["Calib1"].sensors[rotation]
+        sensors_b = cfg.calib["Calib2"].sensors[rotation]
+
         image = ImageWithPoints(
             image_path,
-            cfg.calib["Calib1"].sensors,
-            cfg.calib["Calib2"].sensors,
+            sensors_a,
+            sensors_b,
             rotation
         )
 
@@ -102,50 +108,55 @@ def main(cfg_input, logger):
         main_window.btnImage.setText(CURRENT_CUBE)
         load_image_from_config()
 
+    #Button Rotate
+    main_window.btnRotate.clicked.connect(lambda: image.rotate_180(cfg))
+
     #Button Switch Cube
     main_window.btnImage.setText("Cube20")
     main_window.btnImage.clicked.connect(switch_cube)
 
-
     #Button Connect/Disconnect
     main_window.buttonConnect.setText("Connect")
     main_window.buttonConnect.clicked.connect(lambda: button_connect_click())
+
+    def update_ui_connected(state):
+        Flags.is_connected = state
+        if state:
+            main_window.labelDeviceStatus.setText("COM Port connected")
+            main_window.ColorConnect.setStyleSheet("background-color: green")
+            main_window.buttonConnect.setText("Disconnect")
+            logger.info("Connect : Connected open")
+
+        else:
+            main_window.labelDeviceStatus.setText("COM Port disconnected")
+            main_window.ColorConnect.setStyleSheet("background-color: red")
+            main_window.buttonConnect.setText("Connect")
+
+    def on_serial_connected():
+        update_ui_connected(True)
+
+
+    def on_serial_disconnected():
+        update_ui_connected(False)
+        logger.warning("Serial lost - reconnecting...")
+
     def button_connect_click():
         global serial_reader
         if serial_reader is None:
             comport = main_window.linePort.text()
             serial_reader = SerialReader(comport)
-
-            if not serial_reader.is_connect:
-                main_window.labelDeviceStatus.setText("Cannot connect COM Port")
-                logger.warning("Connect : Cannot connect")
-                serial_reader = None
-                return
-
-            main_window.labelDeviceStatus.setText("COM Port connected")
-            Flags.is_connected = True
-            main_window.ColorConnect.setStyleSheet("background-color: green")
-            main_window.buttonConnect.setText("Disconnect")
-            logger.info("Connect : Connected open")
             serial_reader.data_received.connect(process_serial_data)
-            return
+            serial_reader.connected.connect(on_serial_connected)
+            serial_reader.disconnected.connect(on_serial_disconnected)
+            serial_reader.connect_port()
+            main_window.labelDeviceStatus.setText("Connecting...")
+            logger.info("Connect : Opening")
 
         else:
-            try:
-                Flags.is_connected = False
-                serial_reader.close()
-            except:
-                pass
-
+            serial_reader.close()
             serial_reader = None
+            update_ui_connected(False)
             logger.info("Connect : Connected closed")
-            main_window.labelDeviceStatus.setText("COM Port disconnected")
-            main_window.ColorConnect.setStyleSheet("background-color: red")
-            main_window.ColorCl1.setStyleSheet("background-color: red")
-            main_window.ColorCl2.setStyleSheet("background-color: red")
-            main_window.ColorCheck1.setStyleSheet("background-color: red")
-            main_window.ColorCheck2.setStyleSheet("background-color: red")
-            main_window.buttonConnect.setText("Connect")
 
     def process_serial_data(data):
         logger.info(f"Reciever : {data}")
@@ -173,11 +184,12 @@ def main(cfg_input, logger):
                 if v in ("0", "1"):
                     values.append(int(v))
                 else:
-                    logger.warning("Skipping invalid value:", v)
+                    logger.warning("Skipping invalid value")
+                    continue
 
             #check sensor number
-            N1_S = len(cfg.calib["Calib1"].sensors)
-            N2_S = len(cfg.calib["Calib2"].sensors)
+            N1_S = len(image.sensor_groups[0])
+            N2_S = len(image.sensor_groups[1])
 
             if data_type in ("MANUAL", "AUTO") and group_id == 1:
                 if len(values) != N1_S:
@@ -210,7 +222,7 @@ def main(cfg_input, logger):
                     total.list_false_sensors_calib2 = []
                     total.list_done_sensors_calib2 = []
                     #check value
-                    N1 = len(cfg.calib["Calib1"].sensors)
+                    N1 = len(image.sensor_groups[1])
                     for i, val in enumerate(values):
                         global_i = i + N1
                         if val == 1:
@@ -247,7 +259,7 @@ def main(cfg_input, logger):
                     total.list_false_sensors_calib2_auto = []
                     total.list_done_sensors_calib2_auto = []
                     #check value
-                    N1 = len(cfg.calib["Calib1"].sensors)
+                    N1 = len(image.sensor_groups[1])
                     for i, val in enumerate(values):
                         global_i = i + N1
                         if val == 1:
@@ -461,21 +473,21 @@ def main(cfg_input, logger):
         if Flags.onclick_compare_1 and hasattr(total, "list_false_sensors_calib1"):
 
             for i in total.list_false_sensors_calib1:
-                image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "red")
+                image.set_sensor_color(image.sensor_groups[0][i].id, "red")
 
             for i in total.list_done_sensors_calib1:
-                image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "green")
+                image.set_sensor_color(image.sensor_groups[0][i].id, "green")
 
         if Flags.onclick_compare_2 and hasattr(total, "list_false_sensors_calib2"):
-            N1 = len(cfg.calib["Calib1"].sensors)
+            N1 = len(image.sensor_groups[1])
 
             for i_shifted in total.list_false_sensors_calib2:
                 i = i_shifted - N1
-                image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "red")
+                image.set_sensor_color(image.sensor_groups[1][i].id, "red")
 
             for i_shifted in total.list_done_sensors_calib2:
                 i = i_shifted - N1
-                image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "green")
+                image.set_sensor_color(image.sensor_groups[1][i].id, "green")
 
     #update compare index auto
     def update_compare_index_auto():
@@ -484,20 +496,20 @@ def main(cfg_input, logger):
 
         #calib1
         for i in total.list_false_sensors_calib1_auto:
-            image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "red")
+            image.set_sensor_color(image.sensor_groups[0][i].id, "red")
 
         for i in total.list_done_sensors_calib1_auto:
-            image.set_sensor_color(cfg.calib["Calib1"].sensors[i].id, "green")
+            image.set_sensor_color(image.sensor_groups[0][i].id, "green")
 
         #calib2
-        N1 = len(cfg.calib["Calib1"].sensors)
+        N1 = len(image.sensor_groups[1])
         for i_shifted in total.list_false_sensors_calib2_auto:
             i = i_shifted - N1
-            image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "red")
+            image.set_sensor_color(image.sensor_groups[1][i].id, "red")
 
         for i_shifted in total.list_done_sensors_calib2_auto:
             i = i_shifted - N1
-            image.set_sensor_color(cfg.calib["Calib2"].sensors[i].id, "green")
+            image.set_sensor_color(image.sensor_groups[1][i].id, "green")
 
     #update compare total
     def update_compare_total():
@@ -551,6 +563,6 @@ if __name__ == '__main__':
         cfg = load_config(cfg_path)
         logger = Logger(cfg.logfile)
         main(cfg,logger)
-    except:
-        logger.error("Application close")
+    except Exception as e:
+        logger.info("Application close:", e)
     
