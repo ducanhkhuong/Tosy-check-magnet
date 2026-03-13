@@ -2280,6 +2280,29 @@ border: 1px solid black;</string>
       <string>Rotate</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="btnDebug">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>110</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(175, 175, 175);</string>
+     </property>
+     <property name="text">
+      <string>Debug</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

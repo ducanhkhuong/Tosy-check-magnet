@@ -14,6 +14,7 @@ from Config.config import load_config , get_resource_path
 from Timer.compare_value import compare_value_timer
 from images.hall_image import ImageWithPoints
 from Log.logger import Logger
+import subprocess
 
 serial_reader = None
 total = Total()
@@ -59,6 +60,14 @@ def main(cfg_input, logger):
     main_window.ColorCheck1.setStyleSheet("background-color: red")
     main_window.ColorCheck2.setText("")
     main_window.ColorCheck2.setStyleSheet("background-color: red")
+
+    #Debug
+    def open_debug_terminal():
+        subprocess.Popen([
+            "lxterminal",
+            "-e",
+            "bash -c 'tail -f /home/rpi/Application/log/hall_array_viewer.log; exec bash'"
+        ])
 
     #Initial load image
     image = None
@@ -107,6 +116,9 @@ def main(cfg_input, logger):
         main_window.lineBaudrate.setText(cfg.baudrate)
         main_window.btnImage.setText(CURRENT_CUBE)
         load_image_from_config()
+
+    #Button Debug
+    main_window.btnDebug.clicked.connect(open_debug_terminal)
 
     #Button Rotate
     main_window.btnRotate.clicked.connect(lambda: image.rotate_180(cfg))
